@@ -1,4 +1,4 @@
-"""HTTP client for the Warsaw open data vehicle-location endpoint."""
+"""HTTP client for the Warsaw open data vehicle-location endpoint (dane.um.warszawa.pl)."""
 
 from __future__ import annotations
 
@@ -51,17 +51,20 @@ class ZtmClient:
         return _call()
 
     def _fetch_once(self, vehicle_type: int) -> list[dict[str, Any]]:
-        params: dict[str, str | int] = {
-            "resource_id": self._s.vehicle_resource_id,
-            "apikey": self._s.api_key.get_secret_value(),
-            "type": vehicle_type,
+        # The key travels in a header.
+        headers = {
+            "Authorization": self._s.api_key.get_secret_value(),
+            "User-Agent": self._s.user_agent,
         }
         try:
-            resp = self._session.get(
-                self._s.api_base_url, params=params, timeout=self._s.request_timeout_s
+            resp = self._session.post(
+                self._s.api_base_url,
+                json={"type": vehicle_type},
+                headers=headers,
+                timeout=self._s.request_timeout_s,
             )
         except requests.RequestException as exc:
-            # The exception text contains the full URL, including the API key. Never log it.
+            # Keep exception text out of logs: it can echo request details.
             raise TransientApiError(f"network error: {type(exc).__name__}") from None
 
         if resp.status_code == 429 or resp.status_code >= 500:
@@ -75,10 +78,13 @@ class ZtmClient:
             raise TransientApiError("response was not valid JSON") from None
         return self._extract_records(body)
 
-    @staticmethod
-    def _extract_records(body: Any) -> list[dict[str, Any]]:
+    def _extract_records(self, body: Any) -> list[dict[str, Any]]:
         records = body.get("result") if isinstance(body, dict) else body
-        # This API reports some errors as a plain string inside "result".
+        if isinstance(records, str):
+            message = records.replace(self._s.api_key.get_secret_value(), "***")[:200]
+            raise ApiError(f"API returned an error message: {message!r}")
         if not isinstance(records, list):
-            raise TransientApiError(f"unexpected payload shape: {type(records).__name__}")
+            # Show the *shape* only (top-level keys), never values.
+            shape = f"keys={sorted(body)}" if isinstance(body, dict) else type(body).__name__
+            raise ApiError(f"unexpected response shape: {shape}")
         return records

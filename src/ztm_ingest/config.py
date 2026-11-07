@@ -15,12 +15,13 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="ZTM_", env_file=".env", extra="ignore")
 
     # --- API ---------------------------------------------------------------
-    # The open data portal is migrating (api.um.warszawa.pl -> dane.um.warszawa.pl).
-    # Keep URL and resource id configurable so a portal change is a config change,
-    # not a code change.
+    # The portal moved from api.um.warszawa.pl to dane.um.warszawa.pl. The URL stays
+    # configurable so a future portal change is a config change, not a code change.
     api_key: SecretStr
-    api_base_url: str = "https://api.um.warszawa.pl/api/action/busestrams_get/"
-    vehicle_resource_id: str = "f2e5503e-927d-4ad3-9500-4ab9e55deb59"
+    api_base_url: str = "https://dane.um.warszawa.pl/api/action/get_ztm_lokalizacja_pojazdow"
+    # Some portals sit behind a firewall that rejects Python's default User-Agent with a 403.
+    # Override with ZTM_USER_AGENT if this one is ever blocked too.
+    user_agent: str = "ztm-ingest/0.1"
     request_timeout_s: float = 15.0
     max_retries: int = 4
 
