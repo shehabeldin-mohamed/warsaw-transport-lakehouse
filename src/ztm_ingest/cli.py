@@ -7,7 +7,7 @@ import logging
 import signal
 import time
 
-from ztm_ingest.client import ApiError, ZtmClient
+from ztm_ingest.client import VEHICLE_TYPES, ApiError, ZtmClient
 from ztm_ingest.config import Settings
 from ztm_ingest.ingest import run_once
 from ztm_ingest.storage import make_writer
@@ -15,7 +15,14 @@ from ztm_ingest.storage import make_writer
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Poll ZTM vehicle positions into bronze.")
-    parser.add_argument("--type", type=int, nargs="+", default=[1, 2], help="1=bus, 2=tram")
+    parser.add_argument(
+        "--type",
+        type=int,
+        nargs="+",
+        default=[1, 2],
+        choices=sorted(VEHICLE_TYPES),
+        help="1=bus, 2=tram",
+    )
     parser.add_argument("--interval", type=int, default=0, help="seconds between polls; 0 = once")
     args = parser.parse_args(argv)
 
