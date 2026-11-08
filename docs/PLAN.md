@@ -36,7 +36,7 @@ Power BI
 Project setup
 - [x] Python package `ztm_ingest`, `src/` layout, `pyproject.toml`
 - [x] ruff, mypy strict, pytest with coverage, pre-commit, GitHub Actions CI
-- [ ] uv for environments (`uv sync`, `uv run`) so setup works on Windows, macOS and Linux
+- [x] uv for environments (`uv sync`, `uv run`) so setup works on Windows, macOS and Linux
 - [ ] Same ruff version pinned in pre-commit and the dev dependencies
 
 Configuration
@@ -65,7 +65,7 @@ Data
 - [ ] Run the collector for a few hours, confirm live field names, commit an anonymized `tests/fixtures/sample_response.json`
 - [ ] **GTFS schedule ingest** (`ztm_ingest/gtfs.py`, `ztm-ingest gtfs`): daily zip to `bronze/gtfs/date=…/` (needed for punctuality)
 
-**Done when:** `make check` is green. A live `ztm-ingest --type 1 --once` writes a file with the correct `_meta`, and its log lines are JSON. Tests pass with a broken `.env` present.
+**Done when:** `make check` is green. A live `uv run ztm-ingest --type 1` writes a file with the correct `_meta`, and its log lines are JSON. Tests pass with a broken `.env` present.
 
 ## Phase 2: Analytics locally with dbt + DuckDB ($0)
 

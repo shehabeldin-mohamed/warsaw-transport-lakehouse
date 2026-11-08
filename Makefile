@@ -1,19 +1,19 @@
 .PHONY: install lint format test check collect
 
 install:
-	python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]" && pre-commit install
+	uv sync && uv run pre-commit install
 
 lint:
-	ruff check . && ruff format --check . && mypy src
+	uv run ruff check . && uv run ruff format --check . && uv run mypy src
 
 format:
-	ruff check --fix . && ruff format .
+	uv run ruff check --fix . && uv run ruff format .
 
 test:
-	pytest
+	uv run pytest
 
 check: lint test
 
 # Poll buses and trams every 30 seconds into ./data/bronze
 collect:
-	ztm-ingest --type 1 2 --interval 30
+	uv run ztm-ingest --type 1 2 --interval 30

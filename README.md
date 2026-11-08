@@ -22,14 +22,18 @@ Power BI
 ```
 
 ## Quick start
+Requires [uv](https://docs.astral.sh/uv/).
+
 
 ```bash
-make install                 # venv, dependencies, pre-commit hooks
-cp .env.example .env         # then put your API key in .env
-ztm-ingest --type 1 --once   # one poll of buses -> data/bronze/...
-make collect                 # continuous: buses + trams every 30 s
-make check                   # lint + types + tests
+uv sync                                  # create .venv and install dependencies
+uv run pre-commit install                # git hooks: lint + format on every commit
+cp .env.example .env                     # then put your API key in .env
+uv run ztm-ingest --type 1               # one poll of buses -> data/bronze/...
+uv run ztm-ingest --type 1 2 --interval 30   # continuous: buses + trams every 30 s
+uv run pytest                            # tests (make check on Mac/Linux: lint + types + tests)
 ```
+
 
 ## Principles
 
