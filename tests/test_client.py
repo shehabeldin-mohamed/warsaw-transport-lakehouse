@@ -44,6 +44,14 @@ def test_request_matches_the_documented_api_call(settings, sample_records):
     assert "params" not in kwargs  # the key must not be in the URL
 
 
+def test_invalid_json_is_retried_then_raises(settings):
+    session = MagicMock()
+    session.post.return_value = _response(json_error=True)
+    with pytest.raises(TransientApiError):
+        ZtmClient(settings, session).fetch_vehicle_positions(1)
+    assert session.post.call_count == settings.max_retries
+
+
 def test_rejects_unknown_vehicle_type(settings):
     with pytest.raises(ValueError):
         ZtmClient(settings, MagicMock()).fetch_vehicle_positions(3)
