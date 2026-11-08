@@ -37,7 +37,7 @@ Project setup
 - [x] Python package `ztm_ingest`, `src/` layout, `pyproject.toml`
 - [x] ruff, mypy strict, pytest with coverage, pre-commit, GitHub Actions CI
 - [x] uv for environments (`uv sync`, `uv run`) so setup works on Windows, macOS and Linux
-- [ ] Same ruff version pinned in pre-commit and the dev dependencies
+- [x] Same ruff version pinned in pre-commit and the dev dependencies
 
 Configuration
 - [x] All settings from `ZTM_*` environment variables (pydantic-settings), API key as `SecretStr`
