@@ -43,6 +43,7 @@ def run_once(
 
     data = build_envelope(
         records,
+        source=settings.api_base_url,
         vehicle_type=vehicle_type,
         polled_at=polled_at,
         environment=settings.environment,

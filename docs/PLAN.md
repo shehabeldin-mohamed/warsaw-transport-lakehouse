@@ -51,7 +51,7 @@ API client
 Bronze storage
 - [x] One immutable JSON file per poll (`_meta` + untouched `payload`), Hive-partitioned path
 - [x] Local writer (atomic rename) and Azure Blob writer (`DefaultAzureCredential`)
-- [ ] `_meta.source` taken from the configured API URL
+- [x] `_meta.source` taken from the configured API URL
 - [ ] `requested_at_utc` and `received_at_utc` in `_meta`; partition by received time
 - [ ] Azure writer unit test with a mocked container client
 

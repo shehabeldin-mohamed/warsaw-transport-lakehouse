@@ -17,11 +17,14 @@ def test_build_path_is_hive_partitioned():
 
 def test_envelope_keeps_payload_untouched(sample_records):
     doc = json.loads(
-        build_envelope(sample_records, vehicle_type=1, polled_at=NOW, environment="dev")
+        build_envelope(
+            sample_records, source="test-source", vehicle_type=1, polled_at=NOW, environment="dev"
+        )
     )
     assert doc["payload"] == sample_records
     assert doc["_meta"]["record_count"] == 2
     assert doc["_meta"]["polled_at_utc"].startswith("2026-11-07T15:58:30")
+    assert doc["_meta"]["source"] == "test-source"
 
 
 def test_local_writer_creates_partition_dirs(tmp_path):
@@ -42,6 +45,7 @@ def test_run_once_writes_one_file(settings, sample_records, tmp_path):
     doc = json.loads(open(loc, encoding="utf-8").read())
     assert doc["_meta"]["vehicle_type"] == 1
     assert len(doc["payload"]) == 2
+    assert doc["_meta"]["source"] == settings.api_base_url
 
 
 def test_run_once_skips_empty_feed(settings, tmp_path):

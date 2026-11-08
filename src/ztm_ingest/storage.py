@@ -28,12 +28,17 @@ def build_path(dataset: str, vehicle_type: int, polled_at: datetime) -> str:
 
 
 def build_envelope(
-    records: list[dict[str, Any]], *, vehicle_type: int, polled_at: datetime, environment: str
+    records: list[dict[str, Any]],
+    *,
+    source: str,
+    vehicle_type: int,
+    polled_at: datetime,
+    environment: str,
 ) -> bytes:
     """Raw payload plus ingestion metadata. The records themselves are not modified."""
     doc = {
         "_meta": {
-            "source": "um.warszawa.pl/busestrams_get",
+            "source": source,
             "vehicle_type": vehicle_type,
             "polled_at_utc": polled_at.isoformat(),
             "record_count": len(records),
