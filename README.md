@@ -3,7 +3,7 @@
 Real-time ingestion and analytics of Warsaw public transport (ZTM) open data on
 Azure + Databricks + dbt.
 
-> Status: Phase 1, ingestion. See `docs/adr/` for design decisions.
+> Status: Phase 1, ingestion. See [the project plan](docs/PLAN.md) and `docs/adr/` for design decisions.
 
 ## Architecture (target)
 
