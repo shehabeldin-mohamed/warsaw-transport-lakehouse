@@ -10,7 +10,7 @@ Files are immutable and written once. Bronze is append-only.
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -21,10 +21,13 @@ class BronzeWriter(Protocol):
     def write(self, relative_path: str, data: bytes) -> str: ...
 
 
-def build_path(dataset: str, vehicle_type: int, polled_at: datetime) -> str:
-    """Partitioned relative path for one poll. `polled_at` must be timezone-aware UTC."""
-    ts = polled_at.strftime("%Y%m%dT%H%M%SZ")
-    return f"{dataset}/type={vehicle_type}/date={polled_at:%Y-%m-%d}/hour={polled_at:%H}/{ts}.json"
+def build_path(dataset: str, vehicle_type: int, at: datetime) -> str:
+    """Partitioned relative path for one poll. `at` must be timezone-aware UTC."""
+    if at.utcoffset() != timedelta(0):
+        # A local or naive time would put the file in the wrong date/hour partition.
+        raise ValueError("partition time must be timezone-aware UTC")
+    ts = at.strftime("%Y%m%dT%H%M%SZ")
+    return f"{dataset}/type={vehicle_type}/date={at:%Y-%m-%d}/hour={at:%H}/{ts}.json"
 
 
 def build_envelope(
@@ -32,7 +35,8 @@ def build_envelope(
     *,
     source: str,
     vehicle_type: int,
-    polled_at: datetime,
+    requested_at: datetime,
+    received_at: datetime,
     environment: str,
 ) -> bytes:
     """Raw payload plus ingestion metadata. The records themselves are not modified."""
@@ -40,7 +44,8 @@ def build_envelope(
         "_meta": {
             "source": source,
             "vehicle_type": vehicle_type,
-            "polled_at_utc": polled_at.isoformat(),
+            "requested_at_utc": requested_at.isoformat(),
+            "received_at_utc": received_at.isoformat(),
             "record_count": len(records),
             "environment": environment,
         },
