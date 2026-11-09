@@ -58,7 +58,7 @@ Bronze storage
 Collector
 - [x] `ztm-ingest` CLI: one-shot or interval polling, graceful shutdown on SIGINT/SIGTERM
 - [ ] A single failed poll (API or storage) is logged and never stops the loop; `--type` limited to 1 and 2
-- [ ] Structured JSON logs including `vehicle_type`, `records`, `location`
+- [x] Structured JSON logs including `vehicle_type`, `records`, `location`
 - [ ] Tests isolated from the developer's `.env`
 
 Data

@@ -10,6 +10,7 @@ import time
 from ztm_ingest.client import VEHICLE_TYPES, ApiError, ZtmClient
 from ztm_ingest.config import Settings
 from ztm_ingest.ingest import run_once
+from ztm_ingest.logging_setup import configure_logging
 from ztm_ingest.storage import make_writer
 
 
@@ -27,10 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     settings = Settings()  # values come from the environment
-    logging.basicConfig(
-        level=settings.log_level,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    )
+    configure_logging(settings.log_level)
     log = logging.getLogger("ztm_ingest")
 
     client = ZtmClient(settings)
