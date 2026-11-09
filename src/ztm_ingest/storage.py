@@ -68,22 +68,29 @@ class LocalWriter:
 
 
 class AzureBlobWriter:
-    def __init__(self, account_url: str, container: str) -> None:
-        # Imported lazily so local development does not need the azure extras.
+    def __init__(self, container_client: Any) -> None:
+        # Takes a ready container client, so tests can pass a fake one.
+        self._container = container_client
+
+    @classmethod
+    def from_url(cls, account_url: str, container: str) -> AzureBlobWriter:
+        """Connect with DefaultAzureCredential: managed identity in Azure, `az login` locally."""
+        # Imported lazily so the local backend works without the azure extras installed.
         from azure.identity import DefaultAzureCredential
         from azure.storage.blob import BlobServiceClient
 
         service = BlobServiceClient(account_url, credential=DefaultAzureCredential())
-        self._container = service.get_container_client(container)
+        return cls(service.get_container_client(container))
 
     def write(self, relative_path: str, data: bytes) -> str:
+        # overwrite=False keeps bronze immutable: an existing blob raises instead of
+        # being replaced.
         self._container.upload_blob(name=relative_path, data=data, overwrite=False)
         return f"{self._container.url}/{relative_path}"
 
 
 def make_writer(settings: Settings) -> BronzeWriter:
+    # Settings has already checked that the Azure URL is present and valid.
     if settings.storage_backend == "azure":
-        if not settings.azure_account_url:
-            raise ValueError("ZTM_AZURE_ACCOUNT_URL is required for the azure backend")
-        return AzureBlobWriter(settings.azure_account_url, settings.azure_container)
+        return AzureBlobWriter.from_url(settings.azure_account_url, settings.azure_container)
     return LocalWriter(settings.local_root)

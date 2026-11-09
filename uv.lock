@@ -1352,6 +1352,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
     { name = "types-requests" },
+    { name = "ztm-ingest", extra = ["azure"] },
 ]
 
 [package.metadata]
@@ -1373,4 +1374,5 @@ dev = [
     { name = "pytest-cov", specifier = ">=5.0" },
     { name = "ruff", specifier = "==0.17.4" },
     { name = "types-requests" },
+    { name = "ztm-ingest", extras = ["azure"] },
 ]
