@@ -1,6 +1,24 @@
+import os
+
 import pytest
 
 from ztm_ingest.config import Settings
+
+
+@pytest.fixture(autouse=True)
+def _isolate_environment(monkeypatch, tmp_path):
+    """Make every test independent of the machine it runs on.
+
+    Settings reads ZTM_* environment variables and a `.env` file in the current
+    directory. A developer's real values (their API key, `ZTM_STORAGE_BACKEND=azure`)
+    must never change test results, so remove the variables and run each test from
+    an empty temporary directory where no `.env` exists.
+    """
+    for name in list(os.environ):
+        if name.upper().startswith("ZTM_"):
+            monkeypatch.delenv(name)
+    monkeypatch.chdir(tmp_path)
+
 
 SAMPLE_RECORDS = [
     {
