@@ -36,12 +36,12 @@ Power BI
 Project setup
 - [x] Python package `ztm_ingest`, `src/` layout, `pyproject.toml`
 - [x] ruff, mypy strict, pytest with coverage, pre-commit, GitHub Actions CI
-- [ ] uv for environments (`uv sync`, `uv run`) so setup works on Windows, macOS and Linux
-- [ ] Same ruff version pinned in pre-commit and the dev dependencies
+- [x] uv for environments (`uv sync`, `uv run`) so setup works on Windows, macOS and Linux
+- [x] Same ruff version pinned in pre-commit and the dev dependencies
 
 Configuration
 - [x] All settings from `ZTM_*` environment variables (pydantic-settings), API key as `SecretStr`
-- [ ] Cross-field validation in `Settings` (e.g. the Azure URL is required for the azure backend)
+- [x] Cross-field validation in `Settings` (e.g. the Azure URL is required for the azure backend)
 
 API client
 - [x] POST to `dane.um.warszawa.pl` with the key in the `Authorization` header, never in the URL
@@ -51,21 +51,21 @@ API client
 Bronze storage
 - [x] One immutable JSON file per poll (`_meta` + untouched `payload`), Hive-partitioned path
 - [x] Local writer (atomic rename) and Azure Blob writer (`DefaultAzureCredential`)
-- [ ] `_meta.source` taken from the configured API URL
-- [ ] `requested_at_utc` and `received_at_utc` in `_meta`; partition by received time
-- [ ] Azure writer unit test with a mocked container client
+- [x] `_meta.source` taken from the configured API URL
+- [x] `requested_at_utc` and `received_at_utc` in `_meta`; partition by received time
+- [x] Azure writer unit test with a mocked container client
 
 Collector
 - [x] `ztm-ingest` CLI: one-shot or interval polling, graceful shutdown on SIGINT/SIGTERM
-- [ ] A single failed poll (API or storage) is logged and never stops the loop; `--type` limited to 1 and 2
-- [ ] Structured JSON logs including `vehicle_type`, `records`, `location`
-- [ ] Tests isolated from the developer's `.env`
+- [x] A single failed poll (API or storage) is logged and never stops the loop; `--type` limited to 1 and 2
+- [x] Structured JSON logs including `vehicle_type`, `records`, `location`
+- [x] Tests isolated from the developer's `.env`
 
 Data
 - [ ] Run the collector for a few hours, confirm live field names, commit an anonymized `tests/fixtures/sample_response.json`
 - [ ] **GTFS schedule ingest** (`ztm_ingest/gtfs.py`, `ztm-ingest gtfs`): daily zip to `bronze/gtfs/date=…/` (needed for punctuality)
 
-**Done when:** `make check` is green. A live `ztm-ingest --type 1 --once` writes a file with the correct `_meta`, and its log lines are JSON. Tests pass with a broken `.env` present.
+**Done when:** `make check` is green. A live `uv run ztm-ingest --type 1` writes a file with the correct `_meta`, and its log lines are JSON. Tests pass with a broken `.env` present.
 
 ## Phase 2: Analytics locally with dbt + DuckDB ($0)
 

@@ -10,7 +10,7 @@ Files are immutable and written once. Bronze is append-only.
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -21,21 +21,31 @@ class BronzeWriter(Protocol):
     def write(self, relative_path: str, data: bytes) -> str: ...
 
 
-def build_path(dataset: str, vehicle_type: int, polled_at: datetime) -> str:
-    """Partitioned relative path for one poll. `polled_at` must be timezone-aware UTC."""
-    ts = polled_at.strftime("%Y%m%dT%H%M%SZ")
-    return f"{dataset}/type={vehicle_type}/date={polled_at:%Y-%m-%d}/hour={polled_at:%H}/{ts}.json"
+def build_path(dataset: str, vehicle_type: int, at: datetime) -> str:
+    """Partitioned relative path for one poll. `at` must be timezone-aware UTC."""
+    if at.utcoffset() != timedelta(0):
+        # A local or naive time would put the file in the wrong date/hour partition.
+        raise ValueError("partition time must be timezone-aware UTC")
+    ts = at.strftime("%Y%m%dT%H%M%SZ")
+    return f"{dataset}/type={vehicle_type}/date={at:%Y-%m-%d}/hour={at:%H}/{ts}.json"
 
 
 def build_envelope(
-    records: list[dict[str, Any]], *, vehicle_type: int, polled_at: datetime, environment: str
+    records: list[dict[str, Any]],
+    *,
+    source: str,
+    vehicle_type: int,
+    requested_at: datetime,
+    received_at: datetime,
+    environment: str,
 ) -> bytes:
     """Raw payload plus ingestion metadata. The records themselves are not modified."""
     doc = {
         "_meta": {
-            "source": "um.warszawa.pl/busestrams_get",
+            "source": source,
             "vehicle_type": vehicle_type,
-            "polled_at_utc": polled_at.isoformat(),
+            "requested_at_utc": requested_at.isoformat(),
+            "received_at_utc": received_at.isoformat(),
             "record_count": len(records),
             "environment": environment,
         },
@@ -58,22 +68,29 @@ class LocalWriter:
 
 
 class AzureBlobWriter:
-    def __init__(self, account_url: str, container: str) -> None:
-        # Imported lazily so local development does not need the azure extras.
+    def __init__(self, container_client: Any) -> None:
+        # Takes a ready container client, so tests can pass a fake one.
+        self._container = container_client
+
+    @classmethod
+    def from_url(cls, account_url: str, container: str) -> AzureBlobWriter:
+        """Connect with DefaultAzureCredential: managed identity in Azure, `az login` locally."""
+        # Imported lazily so the local backend works without the azure extras installed.
         from azure.identity import DefaultAzureCredential
         from azure.storage.blob import BlobServiceClient
 
         service = BlobServiceClient(account_url, credential=DefaultAzureCredential())
-        self._container = service.get_container_client(container)
+        return cls(service.get_container_client(container))
 
     def write(self, relative_path: str, data: bytes) -> str:
+        # overwrite=False keeps bronze immutable: an existing blob raises instead of
+        # being replaced.
         self._container.upload_blob(name=relative_path, data=data, overwrite=False)
         return f"{self._container.url}/{relative_path}"
 
 
 def make_writer(settings: Settings) -> BronzeWriter:
+    # Settings has already checked that the Azure URL is present and valid.
     if settings.storage_backend == "azure":
-        if not settings.azure_account_url:
-            raise ValueError("ZTM_AZURE_ACCOUNT_URL is required for the azure backend")
-        return AzureBlobWriter(settings.azure_account_url, settings.azure_container)
+        return AzureBlobWriter.from_url(settings.azure_account_url, settings.azure_container)
     return LocalWriter(settings.local_root)

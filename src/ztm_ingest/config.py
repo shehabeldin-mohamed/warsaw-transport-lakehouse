@@ -5,9 +5,9 @@ Nothing here is hard-coded per environment: dev/prod differ only by env vars.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import SecretStr
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,3 +35,13 @@ class Settings(BaseSettings):
 
     environment: Literal["dev", "prod"] = "dev"
     log_level: str = "INFO"
+
+    @model_validator(mode="after")
+    def _check_azure_settings(self) -> Self:
+        # Fail at startup with a clear message, not later on the first write.
+        if self.storage_backend == "azure":
+            if not self.azure_account_url:
+                raise ValueError("ZTM_AZURE_ACCOUNT_URL is required when ZTM_STORAGE_BACKEND=azure")
+            if not self.azure_account_url.startswith("https://"):
+                raise ValueError("ZTM_AZURE_ACCOUNT_URL must start with https://")
+        return self
