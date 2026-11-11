@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     request_timeout_s: float = 15.0
     max_retries: int = 4
 
+    # --- GTFS schedule -----------------------------------------------------
+    gtfs_url: str = "https://mkuran.pl/gtfs/warsaw.zip"
+    gtfs_timeout_s: float = 120.0  # the zip is about 100 MB
+
     # --- Storage -----------------------------------------------------------
     storage_backend: Literal["local", "azure"] = "local"
     local_root: str = "data/bronze"
