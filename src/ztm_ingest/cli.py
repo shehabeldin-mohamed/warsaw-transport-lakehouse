@@ -1,20 +1,32 @@
-"""Command line entry point: `ztm-ingest --type 1 --interval 30`."""
+"""Command line entry point.
+
+ztm-ingest --type 1 2 --interval 30   poll vehicle positions
+ztm-ingest gtfs                       download today's GTFS schedule
+"""
 
 from __future__ import annotations
 
 import argparse
 import logging
 import signal
+import sys
 import time
 
 from ztm_ingest.client import VEHICLE_TYPES, ApiError, ZtmClient
 from ztm_ingest.config import Settings
+from ztm_ingest.gtfs import GtfsError, run_gtfs
 from ztm_ingest.ingest import run_once
 from ztm_ingest.logging_setup import configure_logging
 from ztm_ingest.storage import BronzeWriter, make_writer
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    # `gtfs` is a separate command. Checked by hand rather than with argparse
+    # subcommands, so the existing `ztm-ingest --type ...` usage keeps working unchanged.
+    if argv[:1] == ["gtfs"]:
+        return _gtfs_main(argv[1:])
+
     parser = argparse.ArgumentParser(description="Poll ZTM vehicle positions into bronze.")
     parser.add_argument(
         "--type",
@@ -81,6 +93,26 @@ def _poll(
         log.exception("poll failed unexpectedly", extra={"vehicle_type": vtype})
         return False
     return True
+
+
+def _gtfs_main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(
+        prog="ztm-ingest gtfs", description="Download the GTFS schedule into bronze."
+    )
+    parser.parse_args(argv)  # no options yet, but gives --help and rejects typos
+
+    settings = Settings()
+    configure_logging(settings.log_level)
+    log = logging.getLogger("ztm_ingest")
+    try:
+        run_gtfs(settings, make_writer(settings))
+    except GtfsError as exc:
+        log.error("gtfs download failed", extra={"error": str(exc)})
+        return 1
+    except Exception:
+        log.exception("gtfs download failed unexpectedly")
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
