@@ -1,0 +1,9 @@
+warsaw_transport:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('ZTM_DUCKDB_PATH', 'warsaw.duckdb') }}"
+      threads: 4
+      settings:
+        TimeZone: UTC

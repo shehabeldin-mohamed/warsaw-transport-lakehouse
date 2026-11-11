@@ -1,0 +1,11 @@
+name: warsaw_transport
+version: "0.1.0"
+profile: warsaw_transport
+model-paths: ["models"]
+test-paths: ["tests"]
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  warsaw_transport:
+    staging:
+      +materialized: view

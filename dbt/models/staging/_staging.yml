@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: stg_vehicle_positions
+    description: >
+      One row per reported vehicle position, from the bronze vehicle_positions files.
+      Times are UTC. Repeated positions from consecutive polls are removed.
+      Stale and out-of-area positions are kept but flagged.
+    columns:
+      - name: vehicle_type
+        description: 1 = bus, 2 = tram (from the type= partition folder).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2]
+      - name: vehicle_number
+        description: Vehicle id. Only unique together with vehicle_type.
+        data_tests:
+          - not_null
+      - name: line
+        data_tests:
+          - not_null
+      - name: reported_at_utc
+        description: When the vehicle reported this position (API `Time`, converted to UTC).
+        data_tests:
+          - not_null
+      - name: received_at_utc
+        description: When our collector received the poll containing this position.
+        data_tests:
+          - not_null
+      - name: is_stale
+        description: Reported more than 5 minutes before we received it.
+      - name: is_in_warsaw_area
+        description: Inside a rough bounding box around Warsaw.
