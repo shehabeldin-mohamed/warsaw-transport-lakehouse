@@ -43,10 +43,16 @@ uv run pytest                            # tests (make check on Mac/Linux: lint 
 - Infrastructure will be Terraform so the whole project can be rebuilt after the
   Azure student credit ends.
 
-## Data source
+## Data sources
 
-Vehicle positions come from the City of Warsaw open data portal
-([dane.um.warszawa.pl](https://dane.um.warszawa.pl/en)), which publishes city data
-free of charge for anyone to use. Data source: Urząd m.st. Warszawy.
-Raw responses are stored unmodified in bronze; all derived tables are this
-project's own processing.
+**Vehicle positions:** Miasto Stołeczne Warszawa, via the Warsaw open data portal
+([dane.um.warszawa.pl](https://dane.um.warszawa.pl/en)). Downloaded continuously since
+November 2026; the download time of every file is recorded in its `_meta.received_at_utc`.
+
+**Timetable (GTFS):**
+- Data provided by: Zarząd Transportu Miejskiego w Warszawie ([ztm.waw.pl](https://ztm.waw.pl))
+- GTFS provided by: Mikołaj Kuranowski ([mkuran.pl/gtfs](https://mkuran.pl/gtfs/))
+- Bus shapes based on data from: © OpenStreetMap contributors, under the
+  [ODbL license](https://www.openstreetmap.org/copyright)
+
+Raw downloads are stored unmodified in bronze; all derived tables are this project's own processing.

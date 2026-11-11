@@ -76,6 +76,14 @@ def test_html_error_page_is_rejected():
         check_gtfs_zip(b"<html>Service unavailable</html>")
 
 
+def test_damaged_zip_is_rejected():
+    # Files are stored uncompressed, so their bytes appear as-is in the zip. Changing
+    # one makes its checksum (CRC) wrong, like a download damaged in transit.
+    damaged = _zip().replace(b"header\n", b"HEADER\n", 1)
+    with pytest.raises(GtfsError, match="corrupt file"):
+        check_gtfs_zip(damaged)
+
+
 def test_zip_without_timetable_files_is_rejected():
     with pytest.raises(GtfsError, match=r"missing: \['stop_times.txt'\]"):
         check_gtfs_zip(_zip(REQUIRED_FILES - {"stop_times.txt"}))
