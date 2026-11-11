@@ -42,3 +42,11 @@ uv run pytest                            # tests (make check on Mac/Linux: lint 
 - Everything is tested, linted, typed, and checked in CI on every PR.
 - Infrastructure will be Terraform so the whole project can be rebuilt after the
   Azure student credit ends.
+
+## Data source
+
+Vehicle positions come from the City of Warsaw open data portal
+([dane.um.warszawa.pl](https://dane.um.warszawa.pl/en)), which publishes city data
+free of charge for anyone to use. Data source: Urząd m.st. Warszawy.
+Raw responses are stored unmodified in bronze; all derived tables are this
+project's own processing.
