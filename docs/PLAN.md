@@ -72,7 +72,7 @@ Data
 - [x] New `dbt/` project using `dbt-duckdb`, reading local bronze JSON with `read_json`.
 - [x] Staging: `stg_vehicle_positions` (explode payload, Warsaw time → UTC, dedupe) and `stg_gtfs_*`.
 - [x] Marts: `fct_segment_speed`, `fct_bunching`, `fct_punctuality`.
-- [ ] dbt tests (unique, not_null, accepted ranges). CI runs `dbt build` on the committed fixture.
+- [x] dbt tests (unique, not_null, accepted ranges). CI runs `dbt build` on the committed fixture.
 
 Expect small SQL dialect edits when porting to Databricks in Phase 6. Use dbt cross-database macros where possible to keep them small.
 
