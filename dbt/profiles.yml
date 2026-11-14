@@ -5,5 +5,8 @@ warsaw_transport:
       type: duckdb
       path: "{{ env_var('ZTM_DUCKDB_PATH', 'warsaw.duckdb') }}"
       threads: 4
+      extensions:
+        - name: zipfs
+          repo: community
       settings:
         TimeZone: UTC

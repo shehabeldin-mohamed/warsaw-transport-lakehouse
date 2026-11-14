@@ -9,6 +9,8 @@ models:
   warsaw_transport:
     staging:
       +materialized: view
+    intermediate:
+      +materialized: table
     marts:
       +materialized: table
 flags:

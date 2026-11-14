@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: stg_gtfs_routes
+    description: GTFS routes from the most recent timetable zip in bronze.
+    columns:
+      - name: route_id
+        data_tests: [not_null, unique]
+      - name: line
+        description: Line number as passengers see it, e.g. 180. Matches `line` in vehicle positions.
+      - name: route_type
+        description: GTFS route type, 0 = tram, 3 = bus.
+
+  - name: stg_gtfs_trips
+    description: One row per scheduled trip.
+    columns:
+      - name: trip_id
+        data_tests: [not_null, unique]
+      - name: service_id
+        data_tests: [not_null]
+      - name: direction_id
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+      - name: brigade
+        description: >
+          GTFS `block_short_name`. Matches the `Brigade` field of the vehicle positions API,
+          which is how a vehicle is linked to the trip it is running.
+
+  - name: stg_gtfs_stops
+    columns:
+      - name: stop_id
+        data_tests: [not_null, unique]
+
+  - name: stg_gtfs_stop_times
+    description: >
+      Scheduled times at each stop, as seconds after midnight of the service day.
+      Can exceed 86,400 for trips running past midnight.
+    columns:
+      - name: trip_id
+        data_tests: [not_null]
+      - name: departure_seconds
+        data_tests: [not_null]
+
+  - name: stg_gtfs_calendar_dates
+    description: Which services run on which dates. This feed lists every date explicitly.
+    columns:
+      - name: service_id
+        data_tests: [not_null]
+      - name: service_date
+        data_tests: [not_null]

@@ -69,9 +69,9 @@ Data
 
 ## Phase 2: Analytics locally with dbt + DuckDB ($0)
 
-- [ ] New `dbt/` project using `dbt-duckdb`, reading local bronze JSON with `read_json`.
-- [ ] Staging: `stg_vehicle_positions` (explode payload, Warsaw time → UTC, dedupe) and `stg_gtfs_*`.
-- [ ] Marts: `fct_segment_speed`, `fct_bunching`, `fct_punctuality`.
+- [x] New `dbt/` project using `dbt-duckdb`, reading local bronze JSON with `read_json`.
+- [x] Staging: `stg_vehicle_positions` (explode payload, Warsaw time → UTC, dedupe) and `stg_gtfs_*`.
+- [x] Marts: `fct_segment_speed`, `fct_bunching`, `fct_punctuality`.
 - [ ] dbt tests (unique, not_null, accepted ranges). CI runs `dbt build` on the committed fixture.
 
 Expect small SQL dialect edits when porting to Databricks in Phase 6. Use dbt cross-database macros where possible to keep them small.
@@ -80,11 +80,17 @@ Expect small SQL dialect edits when porting to Databricks in Phase 6. Use dbt cr
 
 ## Phase 3: Check the student subscription (half a day, by hand)
 
-- [ ] In the Azure portal, create a Databricks workspace. Run one single-node job and check whether serverless compute is available.
-- [ ] Check vCPU quotas and region restrictions.
-- [ ] Look at Cost Management the next day, then delete the test resources.
+- [x] Check credit, vCPU quotas and region restrictions.
+- [x] Monthly budget of $10 with email alerts (created by hand; recreated in Terraform in Phase 4).
+- [x] Check that the Databricks create form offers a usable region and the Premium tier (cancelled before creating anything).
+- [ ] Create the workspace, run one single-node job and check serverless availability: moved to the first day of Phase 6, to use the 14-day trial.
 
-If anything is blocked, change Phases 4–6 before writing code.
+Findings (14 Nov 2026):
+
+- **Credit:** $90 left, expires 26 Dec 2026 unless the student offer is renewed. Phases 4–6 must fit before that date, or wait for the renewal.
+- **Region: Germany West Central** for everything. Azure Databricks isn't offered in Poland Central on this subscription, and keeping storage and compute in one region avoids cross-region transfer.
+- **Quotas** (same in Poland Central and Germany West Central): 6 total regional vCPUs; 4 each for DSv2, DSv3 and DS; 0 for all v5 families (a request for 4 DDSv5 vCPUs was refused). Classic Databricks compute is therefore a **single-node `Standard_D4s_v3`** (4 vCPU, 16 GB); multi-node clusters don't fit. Serverless compute and Flex Consumption run outside these quotas.
+- **Databricks tier:** Premium is available, plus a **Trial** (Premium with 14 days of free DBUs; the VMs are still paid). Create the workspace as Trial on the day Phase 6 starts.
 
 ## Phase 4: Infrastructure as code (Terraform, `infra/`)
 

@@ -48,6 +48,24 @@ models:
       - name: distance_m
         description: Distance between the two vehicles, in metres.
 
+  - name: fct_punctuality
+    description: >
+      One row per scheduled stop visit (first and last stops excluded, because vehicles
+      wait there). The visit is matched to the vehicle running the same line and brigade,
+      at its position closest to the stop: within 50 m, and between 10 min before and
+      30 min after the scheduled time. Unmatched visits are kept with is_observed = false,
+      so coverage can be measured. With positions every 10-30 s, observed times are
+      accurate to roughly 15 s.
+    columns:
+      - name: trip_id
+        data_tests: [not_null]
+      - name: scheduled_at_utc
+        data_tests: [not_null]
+      - name: delay_seconds
+        description: Observed minus scheduled time. Positive = late, negative = early. Null when not observed.
+      - name: is_observed
+        data_tests: [not_null]
+
 unit_tests:
   - name: segment_speed_from_two_consecutive_positions
     description: >
@@ -82,3 +100,27 @@ unit_tests:
     expect:
       rows:
         - {vehicle_a: "1001", vehicle_b: "1002", distance_m: 111.2, seconds_apart: 10, heading_difference_deg: 10.0}
+
+  - name: punctuality_uses_closest_position_of_the_same_brigade
+    description: >
+      T1 is matched to brigade 10's position 11 m from the stop, 2 minutes late. A closer
+      vehicle of another brigade and a later pass outside the 30 min window are ignored.
+      T2 has no vehicle and stays unobserved. The first stop of T1 is excluded.
+    model: fct_punctuality
+    given:
+      - input: ref('int_scheduled_stop_visits')
+        rows:
+          - {service_date: "2026-11-14", trip_id: "T1", vehicle_type: 1, line: "180", brigade: "10", stop_sequence: 5, stop_id: "S1", stop_lat: 52.20, stop_lon: 21.00, scheduled_at_utc: "2026-11-14 15:00:00+00", is_first_stop: false, is_last_stop: false}
+          - {service_date: "2026-11-14", trip_id: "T1", vehicle_type: 1, line: "180", brigade: "10", stop_sequence: 1, stop_id: "S0", stop_lat: 52.10, stop_lon: 21.00, scheduled_at_utc: "2026-11-14 14:40:00+00", is_first_stop: true, is_last_stop: false}
+          - {service_date: "2026-11-14", trip_id: "T2", vehicle_type: 1, line: "180", brigade: "12", stop_sequence: 3, stop_id: "S2", stop_lat: 52.25, stop_lon: 21.00, scheduled_at_utc: "2026-11-14 15:05:00+00", is_first_stop: false, is_last_stop: false}
+      - input: ref('stg_vehicle_positions')
+        rows:
+          - {vehicle_type: 1, vehicle_number: "5427", line: "180", brigade: "10", lat: 52.1980, lon: 21.00, reported_at_utc: "2026-11-14 14:58:30+00", is_stale: false, is_in_warsaw_area: true}
+          - {vehicle_type: 1, vehicle_number: "5427", line: "180", brigade: "10", lat: 52.2001, lon: 21.00, reported_at_utc: "2026-11-14 15:02:00+00", is_stale: false, is_in_warsaw_area: true}
+          - {vehicle_type: 1, vehicle_number: "5427", line: "180", brigade: "10", lat: 52.2015, lon: 21.00, reported_at_utc: "2026-11-14 15:02:30+00", is_stale: false, is_in_warsaw_area: true}
+          - {vehicle_type: 1, vehicle_number: "5427", line: "180", brigade: "10", lat: 52.2000, lon: 21.00, reported_at_utc: "2026-11-14 15:45:00+00", is_stale: false, is_in_warsaw_area: true}
+          - {vehicle_type: 1, vehicle_number: "9999", line: "180", brigade: "11", lat: 52.2000, lon: 21.00, reported_at_utc: "2026-11-14 15:00:00+00", is_stale: false, is_in_warsaw_area: true}
+    expect:
+      rows:
+        - {trip_id: "T1", stop_sequence: 5, vehicle_number: "5427", delay_seconds: 120, distance_to_stop_m: 11.1, is_observed: true}
+        - {trip_id: "T2", stop_sequence: 3, vehicle_number: null, delay_seconds: null, distance_to_stop_m: null, is_observed: false}
