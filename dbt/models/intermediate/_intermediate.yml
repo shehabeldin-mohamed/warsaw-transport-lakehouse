@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: int_scheduled_stop_visits
+    description: >
+      Every scheduled stop visit of every bus and tram trip, limited to the minutes in
+      which we collected vehicle positions. Scheduled times are converted from Warsaw
+      local time to UTC. On the two nights a year when clocks change, trips between
+      02:00 and 03:00 can be off by an hour.
+    columns:
+      - name: trip_id
+        data_tests: [not_null]
+      - name: scheduled_at_utc
+        data_tests: [not_null]
+      - name: vehicle_type
+        description: 1 = bus, 2 = tram, matching the vehicle positions API.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2]

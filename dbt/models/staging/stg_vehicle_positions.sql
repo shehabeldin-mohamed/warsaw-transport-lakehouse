@@ -26,7 +26,7 @@ typed as (
         vehicle_type,
         r."VehicleNumber" as vehicle_number,
         r."Lines" as line,
-        r."Brigade" as brigade,
+        nullif(trim(r."Brigade"), '') as brigade,
         r."Lat" as lat,
         r."Lon" as lon,
         timezone('Europe/Warsaw', strptime(r."Time", '%Y-%m-%d %H:%M:%S')) as reported_at_utc,
