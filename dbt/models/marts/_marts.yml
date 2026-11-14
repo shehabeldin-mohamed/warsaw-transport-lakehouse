@@ -1,0 +1,84 @@
+version: 2
+
+models:
+  - name: fct_segment_speed
+    description: >
+      One row per segment: a vehicle's move between two consecutive reported positions
+      on the same line and brigade. Speed is straight-line distance over time, so on
+      curvy routes it slightly underestimates the real speed. Stale and out-of-area
+      positions are excluded, and so are gaps shorter than 10 s or longer than 5 min.
+    columns:
+      - name: vehicle_type
+        data_tests: [not_null]
+      - name: vehicle_number
+        data_tests: [not_null]
+      - name: line
+        data_tests: [not_null]
+      - name: from_at_utc
+        data_tests: [not_null]
+      - name: to_at_utc
+        data_tests: [not_null]
+      - name: seconds
+        description: Time between the two reports.
+      - name: distance_m
+        description: Straight-line distance between the two positions, in metres.
+      - name: speed_kmh
+        data_tests: [not_null]
+      - name: bearing_deg
+        description: Direction of travel, 0 = north, 90 = east.
+      - name: is_plausible
+        description: False when the speed is above 90 km/h, i.e. a GPS jump.
+
+  - name: fct_bunching
+    description: >
+      Pairs of vehicles of the same line driving within 200 m of each other in the same
+      direction, one row per pair per minute. Direction is estimated from the heading
+      (at most 45 degrees apart), so vehicles passing in opposite directions don't count.
+      Vehicles slower than 5 km/h are ignored, so waiting together at a terminus is not
+      bunching. Positions compared are at most 30 s apart in time.
+    columns:
+      - name: minute_utc
+        data_tests: [not_null]
+      - name: line
+        data_tests: [not_null]
+      - name: vehicle_a
+        data_tests: [not_null]
+      - name: vehicle_b
+        data_tests: [not_null]
+      - name: distance_m
+        description: Distance between the two vehicles, in metres.
+
+unit_tests:
+  - name: segment_speed_from_two_consecutive_positions
+    description: >
+      One clean segment of 0.01 degrees north in 60 s. A stale ghost position in between,
+      a 5 s gap and a 19 min gap must not produce segments.
+    model: fct_segment_speed
+    given:
+      - input: ref('stg_vehicle_positions')
+        rows:
+          - {vehicle_type: 1, vehicle_number: "1001", line: "180", brigade: "1", lat: 52.20, lon: 21.00, reported_at_utc: "2026-11-09 18:00:00+00", is_stale: false, is_in_warsaw_area: true}
+          - {vehicle_type: 1, vehicle_number: "1001", line: "180", brigade: "1", lat: 54.09, lon: 18.77, reported_at_utc: "2026-11-09 18:00:30+00", is_stale: true, is_in_warsaw_area: false}
+          - {vehicle_type: 1, vehicle_number: "1001", line: "180", brigade: "1", lat: 52.21, lon: 21.00, reported_at_utc: "2026-11-09 18:01:00+00", is_stale: false, is_in_warsaw_area: true}
+          - {vehicle_type: 1, vehicle_number: "1001", line: "180", brigade: "1", lat: 52.2101, lon: 21.00, reported_at_utc: "2026-11-09 18:01:05+00", is_stale: false, is_in_warsaw_area: true}
+          - {vehicle_type: 1, vehicle_number: "1001", line: "180", brigade: "1", lat: 52.25, lon: 21.00, reported_at_utc: "2026-11-09 18:20:00+00", is_stale: false, is_in_warsaw_area: true}
+    expect:
+      rows:
+        - {vehicle_number: "1001", from_at_utc: "2026-11-09 18:00:00+00", to_at_utc: "2026-11-09 18:01:00+00", seconds: 60, distance_m: 1112.0, speed_kmh: 66.7, bearing_deg: 0.0, is_plausible: true}
+
+  - name: bunching_needs_same_line_same_direction_and_movement
+    description: >
+      1001 and 1002 are 111 m apart on line 180 heading north: bunched. 1003 is close but
+      heading south, 1004 is on another line and 1005 is standing still: none of them count.
+    model: fct_bunching
+    given:
+      - input: ref('fct_segment_speed')
+        rows:
+          - {vehicle_type: 1, vehicle_number: "1001", line: "180", to_at_utc: "2026-11-09 18:00:40+00", to_lat: 52.2000, to_lon: 21.00, bearing_deg: 0.0, speed_kmh: 20.0, is_plausible: true}
+          - {vehicle_type: 1, vehicle_number: "1002", line: "180", to_at_utc: "2026-11-09 18:00:50+00", to_lat: 52.2010, to_lon: 21.00, bearing_deg: 10.0, speed_kmh: 20.0, is_plausible: true}
+          - {vehicle_type: 1, vehicle_number: "1003", line: "180", to_at_utc: "2026-11-09 18:00:45+00", to_lat: 52.2005, to_lon: 21.00, bearing_deg: 180.0, speed_kmh: 20.0, is_plausible: true}
+          - {vehicle_type: 1, vehicle_number: "1004", line: "189", to_at_utc: "2026-11-09 18:00:45+00", to_lat: 52.2002, to_lon: 21.00, bearing_deg: 0.0, speed_kmh: 20.0, is_plausible: true}
+          - {vehicle_type: 1, vehicle_number: "1005", line: "180", to_at_utc: "2026-11-09 18:00:42+00", to_lat: 52.2001, to_lon: 21.00, bearing_deg: 0.0, speed_kmh: 0.0, is_plausible: true}
+    expect:
+      rows:
+        - {vehicle_a: "1001", vehicle_b: "1002", distance_m: 111.2, seconds_apart: 10, heading_difference_deg: 10.0}
