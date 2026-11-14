@@ -9,3 +9,5 @@ models:
   warsaw_transport:
     staging:
       +materialized: view
+flags:
+  send_anonymous_usage_stats: false
