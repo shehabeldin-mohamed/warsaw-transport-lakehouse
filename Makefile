@@ -1,4 +1,4 @@
-.PHONY: install lint format test check collect
+.PHONY: install lint format test dbt dbt-fixture check collect
 
 install:
 	uv sync && uv run pre-commit install
@@ -12,7 +12,15 @@ format:
 test:
 	uv run pytest
 
-check: lint test
+# Build and test the dbt models on everything collected in ./data/bronze
+dbt:
+	cd dbt && uv run dbt build
+
+# Same, on the small committed fixture (what CI runs)
+dbt-fixture:
+	cd dbt && ZTM_BRONZE_ROOT=../tests/fixtures/bronze ZTM_DUCKDB_PATH=fixture.duckdb uv run dbt build
+
+check: lint test dbt-fixture
 
 # Poll buses and trams every 30 seconds into ./data/bronze
 collect:

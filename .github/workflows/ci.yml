@@ -22,3 +22,18 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy src
       - run: uv run pytest
+
+  dbt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+      - run: uv sync --locked
+      - name: dbt build on the committed fixture
+        working-directory: dbt
+        env:
+          ZTM_BRONZE_ROOT: ../tests/fixtures/bronze
+        run: uv run dbt build
