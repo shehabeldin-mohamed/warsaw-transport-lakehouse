@@ -8,7 +8,7 @@ __pycache__/
 .ruff_cache/
 .coverage
 data/
-# Terraform (added in a later phase)
+# Terraform
 .terraform/
 *.tfstate
 *.tfstate.*
